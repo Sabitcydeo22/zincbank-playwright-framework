@@ -1,0 +1,39 @@
+{
+  "name": "zincbank-playwright-framework",
+  "version": "1.0.0",
+  "description": "Beginner-friendly BDD test automation framework (Cucumber + Playwright + TypeScript + Page Object Model) for the ZincBank demo application - https://zincbank.cydeo.io",
+  "private": true,
+  "keywords": [
+    "playwright",
+    "cucumber",
+    "bdd",
+    "typescript",
+    "zincbank",
+    "test-automation",
+    "page-object-model"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "cucumber-js",
+    "test:smoke": "cucumber-js --tags \"@smoke\"",
+    "test:regression": "cucumber-js --tags \"@regression\"",
+    "test:report": "node generate-html-report.js",
+    "test:full": "npm test && npm run test:report"
+  },
+  "dependencies": {
+    "@cucumber/cucumber": "^13.2.1",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@cucumber/html-formatter": "^24.1.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "cucumber-html-reporter": "^7.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.0"
+  }
+}
