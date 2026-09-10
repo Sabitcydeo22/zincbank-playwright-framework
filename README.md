@@ -33,11 +33,14 @@ zincbank-playwright-framework/
 │
 └── src/
     ├── features/
-    │   └── login.feature        # Gherkin scenarios
+    │   ├── login.feature        # Gherkin scenarios for the login flow
+    │   └── dashboard.feature    # Gherkin scenarios for the authenticated dashboard (ZIN-57)
     ├── pages/
-    │   └── LoginPage.ts         # Page Object Model for the login page
+    │   ├── LoginPage.ts         # Page Object Model for the login page
+    │   └── DashboardPage.ts     # Page Object Model for the dashboard (nav, content, sign out)
     ├── step-definitions/
-    │   └── login.steps.ts       # glue between .feature and the POM
+    │   ├── login.steps.ts       # glue between the login .feature and the POM
+    │   └── dashboard.steps.ts   # glue between the dashboard .feature and the POM
     └── support/
         ├── world.ts             # custom World: browser / context / page
         └── hooks.ts             # Before & After hooks (setup / teardown)
@@ -171,12 +174,31 @@ visible while the tests run.
 
 ## What the tests cover
 
-`src/features/login.feature` contains two scenarios:
+### `src/features/login.feature`
 
 | Scenario | Tags | What it verifies |
 | --- | --- | --- |
 | Successful login with valid credentials | `@smoke` `@regression` | Signing in with the `.env` demo account redirects to `/dashboard` and shows the welcome heading |
 | Login is rejected with invalid credentials | `@regression` | Wrong credentials stay on the login page and show `Invalid email or password.` |
+
+### `src/features/dashboard.feature` (ZIN-57 / US001, tagged `@dashboard`)
+
+| Scenario | AC | What it verifies |
+| --- | --- | --- |
+| Valid login creates an authenticated session and shows navigation items | US001-AC1 | After login the customer is on `/dashboard` and all sidebar navigation items are visible |
+| Dashboard shows welcome message, total deposit balance and account sections | US001-AC2 | Welcome banner, total deposit balance figure and account cards are rendered |
+| Authenticated session persists on the dashboard after a page refresh | US001-AC3 | Reloading `/dashboard` keeps the session and the welcome banner |
+| Unauthenticated user accessing the dashboard directly is redirected to login | US001-AC4 | Direct `/dashboard` visit redirects to `/login` and no protected content is shown |
+| Sidebar displays all navigation elements | US001-AC5 | Dashboard, Accounts, Move money, Transactions, Cards, Profile and Sign out are all displayed |
+| Each navigation element navigates to its corresponding page (scenario outline) | US001-AC5 | Clicking each nav link lands on `/dashboard`, `/accounts`, `/move-money`, `/transactions`, `/cards`, `/profile` |
+| Sign out terminates the session and redirects to login | US001-AC6 | Clicking Sign out returns the customer to `/login` |
+| Protected pages are blocked after sign out | US001-AC7 | After sign out, direct `/dashboard` and `/accounts` visits both redirect to `/login` |
+
+Run just the dashboard feature:
+
+```bash
+npx cucumber-js --tags "@dashboard"
+```
 
 ---
 
