@@ -36,6 +36,9 @@ export class DashboardPage {
   private readonly totalDepositBalance: Locator;
   private readonly accountCards: Locator;
 
+  /** Quick-action shortcut to the Move Money page (ZIN-60 / US003). */
+  private readonly quickTransfer: Locator;
+
   constructor(private readonly page: Page) {
     this.navDashboard = page.getByTestId('nav-dashboard');
     this.navAccounts = page.getByTestId('nav-accounts');
@@ -60,6 +63,7 @@ export class DashboardPage {
     // Account card testids contain a dynamic UUID, e.g.
     // "dashboard-account-card-e6539f51-...", so match by prefix.
     this.accountCards = page.locator('[data-testid^="dashboard-account-card-"]');
+    this.quickTransfer = page.getByTestId('dashboard-quick-transfer');
   }
 
   // ── Navigation actions ────────────────────────────────────────────────
@@ -82,6 +86,16 @@ export class DashboardPage {
   /** Clicks the "Transactions" sidebar link. */
   async clickTransactions(): Promise<void> {
     await this.navTransactions.click();
+  }
+
+  /**
+   * Clicks the "Move money" quick-action shortcut shown on the dashboard
+   * (rendered by the dashboard quick-links section, testid
+   * "dashboard-quick-transfer"). This is the second documented route into the
+   * transfer experience (ZIN-60 / US003 - AC1).
+   */
+  async clickQuickTransfer(): Promise<void> {
+    await this.quickTransfer.click();
   }
 
   /** Clicks the "Cards" sidebar link. */

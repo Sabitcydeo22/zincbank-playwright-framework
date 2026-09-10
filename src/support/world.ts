@@ -33,6 +33,16 @@ export class CustomWorld extends World {
    */
   passwordReset?: { currentPassword: string; restoreTo: string };
 
+  /**
+   * Snapshot of the account labels (id -> "Savings ••1182 ($0.00)") taken from
+   * the Move Money "From" dropdown (ZIN-60 / US003).
+   *
+   * The Transfer feature uses it as cross-step state so a later step can prove
+   * that abandoning the transfer form without submitting never changes a
+   * balance.
+   */
+  transferBalancesSnapshot?: Record<string, string>;
+
   constructor(options: IWorldOptions) {
     super(options);
     // Calling super() wires up the helper methods that come with the World,
