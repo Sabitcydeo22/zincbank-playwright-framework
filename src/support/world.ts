@@ -22,6 +22,17 @@ export class CustomWorld extends World {
   /** The active page inside the context - all UI actions happen on it. */
   page!: Page;
 
+  /**
+   * Set while a password change still needs to be reverted (ZIN-59 / US002).
+   *  - `currentPassword` is the password the account has right now (the one we
+   *    just changed it to),
+   *  - `restoreTo` is the original password from process.env.TEST_PASSWORD.
+   *
+   * The positive profile scenario clears this via an explicit teardown step;
+   * the defensive cleanup in hooks.ts uses it as a safety net.
+   */
+  passwordReset?: { currentPassword: string; restoreTo: string };
+
   constructor(options: IWorldOptions) {
     super(options);
     // Calling super() wires up the helper methods that come with the World,

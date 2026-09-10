@@ -34,13 +34,16 @@ zincbank-playwright-framework/
 └── src/
     ├── features/
     │   ├── login.feature        # Gherkin scenarios for the login flow
-    │   └── dashboard.feature    # Gherkin scenarios for the authenticated dashboard (ZIN-57)
+    │   ├── dashboard.feature    # Gherkin scenarios for the authenticated dashboard (ZIN-57)
+    │   └── profile.feature      # Gherkin scenarios for profile + change password (ZIN-59)
     ├── pages/
     │   ├── LoginPage.ts         # Page Object Model for the login page
-    │   └── DashboardPage.ts     # Page Object Model for the dashboard (nav, content, sign out)
+    │   ├── DashboardPage.ts     # Page Object Model for the dashboard (nav, content, sign out)
+    │   └── ProfilePage.ts       # Page Object Model for the profile page (details + change password)
     ├── step-definitions/
     │   ├── login.steps.ts       # glue between the login .feature and the POM
-    │   └── dashboard.steps.ts   # glue between the dashboard .feature and the POM
+    │   ├── dashboard.steps.ts   # glue between the dashboard .feature and the POM
+    │   └── profile.steps.ts     # glue between the profile .feature and the POM
     └── support/
         ├── world.ts             # custom World: browser / context / page
         └── hooks.ts             # Before & After hooks (setup / teardown)
@@ -55,13 +58,14 @@ zincbank-playwright-framework/
 2. For every scenario Cucumber creates a **World** object
    (`src/support/world.ts`) that holds the Playwright `browser`, `context` and
    `page`.
-3. The **Before hook** (`src/support/hooks.ts`) launches Chromium and opens a
-   fresh page.
+3. The **Before hook** (`src/support/hooks.ts`) launches Chromium in headed mode
+   (the window is visible on screen) and opens a fresh page.
 4. Each **step definition** (`src/step-definitions/login.steps.ts`) talks to
    the **Page Object** (`src/pages/LoginPage.ts`), which knows how to find and
    operate the page elements.
-5. If a scenario fails, the **After hook** captures a screenshot and embeds it
-   in the report.
+5. The **After hook** is the scenario cleanup: it restores the test account
+   password when a change is still pending (see the profile feature below) and,
+   if a scenario failed, captures a screenshot and embeds it in the report.
 6. Two HTML reports are produced:
    - `reports/cucumber-report.html` — written by `@cucumber/html-formatter`
      **during the test run**, includes embedded failure screenshots.
@@ -166,9 +170,12 @@ npx cucumber-js --tags "not @smoke"
 
 ### Watch the browser while debugging
 
-Set `HEADLESS=false` in your `.env` file (or run
-`set HEADLESS=false` before the test command) and the browser window will be
-visible while the tests run.
+The framework launches Chromium **headed** (`headless: false` in
+`src/support/hooks.ts`), so a browser window is visible on screen while the
+tests run. This is intentional for the profile / change-password story
+(ZIN-59), where the whole flow - typing the passwords, the success
+notification and the password revert - is meant to be seen. Switch it to
+`headless: true` when you want faster, invisible runs (e.g. in CI).
 
 ---
 
@@ -200,6 +207,46 @@ Run just the dashboard feature:
 npx cucumber-js --tags "@dashboard"
 ```
 
+### `src/features/profile.feature` (ZIN-59 / US002, tagged `@profile`)
+
+Profile information and change password.
+
+| Scenario | AC | What it verifies |
+| --- | --- | --- |
+| Authenticated user navigates to the Profile page via the sidebar link | US002-AC1 | Clicking `Profile` in the header lands on `/profile` and the profile view renders |
+| Profile page displays the customer's profile information | US002-AC2 | The `Profile` page and its change-password form are displayed to the authenticated customer |
+| Customer changes the password and the original password is restored | US002-AC3 | Changing the password shows `Password changed`; a teardown step immediately reverts it to `process.env.TEST_PASSWORD`, and a final sign-out/sign-in proves the account works with the original password again |
+| Validation errors for missing, short or incorrect password input (scenario outline) | US002-AC4 | Shows `Current password is required`, `New password must be at least 8 characters` (blank or too short) and `Current password is incorrect` |
+
+Run just the profile feature:
+
+```bash
+npx cucumber-js --tags "@profile"
+```
+
+#### Password teardown (important)
+
+The positive scenario (US002-AC3) really changes the password, so the feature
+**always reverts it**:
+
+1. `I change my password to a new valid password` generates a unique password
+   and records the pending change on the World (`world.passwordReset`).
+2. `I change my password back to the original password` signs the account back
+   to `process.env.TEST_PASSWORD` and clears the pending change.
+3. `I should be able to log in again with the original password` signs out and
+   signs in again with `TEST_PASSWORD` to prove the revert really worked.
+4. As a safety net, the **After hook** in `src/support/hooks.ts` restores the
+   original password too if a scenario ever fails before the teardown step runs
+   (while the browser is still open).
+
+> **Adaptations to the live ZincBank build.** The `/profile` form has only two
+> fields (current + new password) - there is **no "confirm new password"**
+> field, so the "confirmation"/"mismatch" parts of US002-AC3/AC4 have no UI to
+> test against. The page also renders the `Profile` view rather than
+> Name/Email details (`/api/profile` returns `No profile on file` for the demo
+> account), so AC2 is asserted against the profile view and the change-password
+> form the app actually renders.
+
 ---
 
 ## How to add a new test (workflow)
@@ -222,7 +269,7 @@ npx cucumber-js --tags "@dashboard"
 | `browserType.launch: Executable doesn't exist` | Run `npx playwright install chromium` |
 | Missing credentials error at runtime | Make sure `.env` exists (copy from `.env.example`) |
 | `reports/cucumber-report.json` not found when running `test:report` | Run the tests first (`npm test`) |
-| Tests are slow | Headless mode is faster; keep `HEADLESS` unset (or `true`) |
+| Tests are slow | Set `headless: true` in `src/support/hooks.ts` - headless mode is faster |
 
 ---
 

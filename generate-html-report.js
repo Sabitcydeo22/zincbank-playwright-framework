@@ -35,7 +35,7 @@ const options = {
   launchReport: false, // do not auto-open the report in a browser
   metadata: {
     'Test Environment': process.env.TEST_ENV ?? 'production',
-    'Browser': 'Chromium (headless)',
+    'Browser': 'Chromium (headed)',
     'Platform': `${process.platform} (${process.arch})`,
     'Executed': new Date().toLocaleString()
   }
