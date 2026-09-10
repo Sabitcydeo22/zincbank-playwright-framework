@@ -1,5 +1,14 @@
-import { IWorldOptions, setWorldConstructor, World } from '@cucumber/cucumber';
+import { IWorldOptions, setDefaultTimeout, setWorldConstructor, World } from '@cucumber/cucumber';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
+
+/**
+ * ZincBank is an SPA whose pages settle a few seconds after navigation
+ * (login -> dashboard, Move Money, Transactions). Cucumber's default step
+ * timeout of 5 s is too tight for that, so every step is allowed up to 30 s -
+ * the same budget Playwright's own assertions use. This hardens the whole
+ * suite against slow cold starts without changing any scenario logic.
+ */
+setDefaultTimeout(30_000);
 
 /**
  * Custom World
@@ -42,6 +51,15 @@ export class CustomWorld extends World {
    * balance.
    */
   transferBalancesSnapshot?: Record<string, string>;
+
+  /**
+   * Every `/api/transactions` request the app triggers while the Transactions
+   * feature (ZIN-61 / US004) runs. The date-range / pagination scenarios stub
+   * the API and push each intercepted request URL here so a later step can
+   * assert the exact `accountId`, `from`, `to` and `offset` query params the
+   * UI really sent.
+   */
+  transactionsRequests?: string[];
 
   constructor(options: IWorldOptions) {
     super(options);
